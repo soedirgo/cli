@@ -1,0 +1,532 @@
+[
+    {
+        "id": 1,
+        "type": "function",
+        "label": "Functions",
+        "title": "authorize(requested_permission app_permission, user_id uuid)",
+        "oid": 16694,
+        "status": "Source Only",
+        "source_ddl": "CREATE OR REPLACE FUNCTION public.authorize(\n\trequested_permission app_permission,\n\tuser_id uuid)\n    RETURNS boolean\n    LANGUAGE 'plpgsql'\n    COST 100\n    VOLATILE SECURITY DEFINER PARALLEL UNSAFE\nAS $BODY$\ndeclare\n  bind_permissions int;\nbegin\n  select count(*)\n  from public.role_permissions\n  inner join public.user_roles on role_permissions.role = user_roles.role\n  where role_permissions.permission = authorize.requested_permission\n    and user_roles.user_id = authorize.user_id\n  into bind_permissions;\n  \n  return bind_permissions > 0;\nend;\n$BODY$;\n\nALTER FUNCTION public.authorize(app_permission, uuid)\n    OWNER TO supabase_admin;\n",
+        "target_ddl": "",
+        "diff_ddl": "CREATE OR REPLACE FUNCTION public.authorize(\n\trequested_permission app_permission,\n\tuser_id uuid)\n    RETURNS boolean\n    LANGUAGE 'plpgsql'\n    COST 100\n    VOLATILE SECURITY DEFINER PARALLEL UNSAFE\nAS $BODY$\ndeclare\n  bind_permissions int;\nbegin\n  select count(*)\n  from public.role_permissions\n  inner join public.user_roles on role_permissions.role = user_roles.role\n  where role_permissions.permission = authorize.requested_permission\n    and user_roles.user_id = authorize.user_id\n  into bind_permissions;\n  \n  return bind_permissions > 0;\nend;\n$BODY$;\n\nALTER FUNCTION public.authorize(app_permission, uuid)\n    OWNER TO supabase_admin;\n",
+        "group_name": "Schema Objects",
+        "dependencies": [
+            {
+                "type": "type",
+                "name": "public.app_permission",
+                "oid": 16607
+            },
+            {
+                "type": "language",
+                "name": "plpgsql",
+                "oid": 13388
+            },
+            {
+                "type": "role",
+                "name": "supabase_admin",
+                "field": "Owner"
+            }
+        ],
+        "source_schema_name": null
+    },
+    {
+        "id": 2,
+        "type": "function",
+        "label": "Functions",
+        "title": "show_current_user()",
+        "oid": 16604,
+        "status": "Source Only",
+        "source_ddl": "CREATE OR REPLACE FUNCTION public.show_current_user(\n\t)\n    RETURNS name\n    LANGUAGE 'sql'\n    COST 100\n    VOLATILE PARALLEL UNSAFE\nAS $BODY$\nselect current_user;\n$BODY$;\n\nALTER FUNCTION public.show_current_user()\n    OWNER TO supabase_admin;\n",
+        "target_ddl": "",
+        "diff_ddl": "CREATE OR REPLACE FUNCTION public.show_current_user(\n\t)\n    RETURNS name\n    LANGUAGE 'sql'\n    COST 100\n    VOLATILE PARALLEL UNSAFE\nAS $BODY$\nselect current_user;\n$BODY$;\n\nALTER FUNCTION public.show_current_user()\n    OWNER TO supabase_admin;\n",
+        "group_name": "Schema Objects",
+        "dependencies": [
+            {
+                "type": "role",
+                "name": "supabase_admin",
+                "field": "Owner"
+            }
+        ],
+        "source_schema_name": null
+    },
+    {
+        "id": 3,
+        "type": "trigger_function",
+        "label": "Trigger Functions",
+        "title": "handle_new_user()",
+        "oid": 16708,
+        "status": "Source Only",
+        "source_ddl": "CREATE FUNCTION public.handle_new_user()\n    RETURNS trigger\n    LANGUAGE 'plpgsql'\n    COST 100\n    VOLATILE NOT LEAKPROOF SECURITY DEFINER\nAS $BODY$\ndeclare is_admin boolean;\nbegin\n  insert into public.users (id, username)\n  values (new.id, new.email);\n  \n  select count(*) = 1 from auth.users into is_admin;\n  \n  if position('+supaadmin@' in new.email) > 0 then\n    insert into public.user_roles (user_id, role) values (new.id, 'admin');\n  elsif position('+supamod@' in new.email) > 0 then\n    insert into public.user_roles (user_id, role) values (new.id, 'moderator');\n  end if;\n  \n  return new;\nend;\n$BODY$;\n\nALTER FUNCTION public.handle_new_user()\n    OWNER TO supabase_admin;\n",
+        "target_ddl": "",
+        "diff_ddl": "CREATE FUNCTION public.handle_new_user()\n    RETURNS trigger\n    LANGUAGE 'plpgsql'\n    COST 100\n    VOLATILE NOT LEAKPROOF SECURITY DEFINER\nAS $BODY$\ndeclare is_admin boolean;\nbegin\n  insert into public.users (id, username)\n  values (new.id, new.email);\n  \n  select count(*) = 1 from auth.users into is_admin;\n  \n  if position('+supaadmin@' in new.email) > 0 then\n    insert into public.user_roles (user_id, role) values (new.id, 'admin');\n  elsif position('+supamod@' in new.email) > 0 then\n    insert into public.user_roles (user_id, role) values (new.id, 'moderator');\n  end if;\n  \n  return new;\nend;\n$BODY$;\n\nALTER FUNCTION public.handle_new_user()\n    OWNER TO supabase_admin;\n",
+        "group_name": "Schema Objects",
+        "dependencies": [
+            {
+                "type": "language",
+                "name": "plpgsql",
+                "oid": 13388
+            },
+            {
+                "type": "role",
+                "name": "supabase_admin",
+                "field": "Owner"
+            }
+        ],
+        "source_schema_name": null
+    },
+    {
+        "id": 4,
+        "type": "sequence",
+        "label": "Sequences",
+        "title": "todos_id_seq",
+        "oid": 16580,
+        "status": "Target Only",
+        "source_ddl": "",
+        "target_ddl": "CREATE SEQUENCE public.todos_id_seq\n    INCREMENT 1\n    START 1\n    MINVALUE 1\n    MAXVALUE 9223372036854775807\n    CACHE 1;\n\nALTER SEQUENCE public.todos_id_seq\n    OWNER TO supabase_admin;\n\nGRANT ALL ON SEQUENCE public.todos_id_seq TO anon;\n\nGRANT ALL ON SEQUENCE public.todos_id_seq TO authenticated;\n\nGRANT ALL ON SEQUENCE public.todos_id_seq TO postgres;\n\nGRANT ALL ON SEQUENCE public.todos_id_seq TO service_role;\n\nGRANT ALL ON SEQUENCE public.todos_id_seq TO supabase_admin;",
+        "diff_ddl": "DROP SEQUENCE public.todos_id_seq;",
+        "group_name": "Schema Objects",
+        "dependencies": []
+    },
+    {
+        "id": 5,
+        "type": "table",
+        "label": "Tables",
+        "title": "profiles",
+        "oid": 16740,
+        "status": "Source Only",
+        "source_ddl": "CREATE TABLE public.profiles\n(\n    id uuid NOT NULL,\n    updated_at timestamp with time zone,\n    username text COLLATE pg_catalog.\"default\",\n    avatar_url text COLLATE pg_catalog.\"default\",\n    website text COLLATE pg_catalog.\"default\",\n    CONSTRAINT profiles_pkey PRIMARY KEY (id),\n    CONSTRAINT profiles_username_key UNIQUE (username),\n    CONSTRAINT profiles_id_fkey FOREIGN KEY (id)\n        REFERENCES auth.users (id) MATCH SIMPLE\n        ON UPDATE NO ACTION\n        ON DELETE NO ACTION,\n    CONSTRAINT username_length CHECK (char_length(username) >= 3)\n)\n\nTABLESPACE pg_default;\n\nALTER TABLE public.profiles\n    OWNER to supabase_admin;\n\nALTER TABLE public.profiles\n    ENABLE ROW LEVEL SECURITY;\nCREATE POLICY \"Public profiles are viewable by everyone.\"\n    ON public.profiles\n    AS PERMISSIVE\n    FOR SELECT\n    TO public\n    USING (true);\nCREATE POLICY \"Users can insert their own profile.\"\n    ON public.profiles\n    AS PERMISSIVE\n    FOR INSERT\n    TO public\n    WITH CHECK ((auth.uid() = id));\nCREATE POLICY \"Users can update own profile.\"\n    ON public.profiles\n    AS PERMISSIVE\n    FOR UPDATE\n    TO public\n    USING ((auth.uid() = id));",
+        "target_ddl": "",
+        "diff_ddl": "CREATE TABLE public.profiles\n(\n    id uuid NOT NULL,\n    updated_at timestamp with time zone,\n    username text COLLATE pg_catalog.\"default\",\n    avatar_url text COLLATE pg_catalog.\"default\",\n    website text COLLATE pg_catalog.\"default\",\n    CONSTRAINT profiles_pkey PRIMARY KEY (id),\n    CONSTRAINT profiles_username_key UNIQUE (username),\n    CONSTRAINT profiles_id_fkey FOREIGN KEY (id)\n        REFERENCES auth.users (id) MATCH SIMPLE\n        ON UPDATE NO ACTION\n        ON DELETE NO ACTION,\n    CONSTRAINT username_length CHECK (char_length(username) >= 3)\n)\n\nTABLESPACE pg_default;\n\nALTER TABLE public.profiles\n    OWNER to supabase_admin;\n\nALTER TABLE public.profiles\n    ENABLE ROW LEVEL SECURITY;\nCREATE POLICY \"Public profiles are viewable by everyone.\"\n    ON public.profiles\n    AS PERMISSIVE\n    FOR SELECT\n    TO public\n    USING (true);\nCREATE POLICY \"Users can insert their own profile.\"\n    ON public.profiles\n    AS PERMISSIVE\n    FOR INSERT\n    TO public\n    WITH CHECK ((auth.uid() = id));\nCREATE POLICY \"Users can update own profile.\"\n    ON public.profiles\n    AS PERMISSIVE\n    FOR UPDATE\n    TO public\n    USING ((auth.uid() = id));",
+        "group_name": "Schema Objects",
+        "dependencies": [
+            {
+                "type": "role",
+                "name": "supabase_admin",
+                "field": "Owner"
+            },
+            {
+                "type": "table",
+                "name": "auth.users"
+            },
+            {
+                "type": "function",
+                "name": "auth.uid",
+                "oid": 16503
+            },
+            {
+                "type": "column",
+                "name": "public.profiles.id",
+                "oid": 16740
+            },
+            {
+                "type": "function",
+                "name": "auth.uid",
+                "oid": 16503
+            },
+            {
+                "type": "column",
+                "name": "public.profiles.id",
+                "oid": 16740
+            }
+        ],
+        "source_schema_name": null
+    },
+    {
+        "id": 6,
+        "type": "table",
+        "label": "Tables",
+        "title": "user_roles",
+        "oid": 16673,
+        "status": "Source Only",
+        "source_ddl": "CREATE TABLE public.user_roles\n(\n    id bigint NOT NULL GENERATED BY DEFAULT AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),\n    user_id uuid NOT NULL,\n    role app_role NOT NULL,\n    CONSTRAINT user_roles_pkey PRIMARY KEY (id),\n    CONSTRAINT user_roles_user_id_role_key UNIQUE (user_id, role),\n    CONSTRAINT user_roles_user_id_fkey FOREIGN KEY (user_id)\n        REFERENCES public.users (id) MATCH SIMPLE\n        ON UPDATE NO ACTION\n        ON DELETE CASCADE\n)\n\nTABLESPACE pg_default;\n\nALTER TABLE public.user_roles\n    OWNER to supabase_admin;\n\nALTER TABLE public.user_roles\n    ENABLE ROW LEVEL SECURITY;\n\nCOMMENT ON TABLE public.user_roles\n    IS 'Application roles for each user.';\nCREATE POLICY \"Allow individual read access\"\n    ON public.user_roles\n    AS PERMISSIVE\n    FOR SELECT\n    TO public\n    USING ((auth.uid() = user_id));",
+        "target_ddl": "",
+        "diff_ddl": "CREATE TABLE public.user_roles\n(\n    id bigint NOT NULL GENERATED BY DEFAULT AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),\n    user_id uuid NOT NULL,\n    role app_role NOT NULL,\n    CONSTRAINT user_roles_pkey PRIMARY KEY (id),\n    CONSTRAINT user_roles_user_id_role_key UNIQUE (user_id, role),\n    CONSTRAINT user_roles_user_id_fkey FOREIGN KEY (user_id)\n        REFERENCES public.users (id) MATCH SIMPLE\n        ON UPDATE NO ACTION\n        ON DELETE CASCADE\n)\n\nTABLESPACE pg_default;\n\nALTER TABLE public.user_roles\n    OWNER to supabase_admin;\n\nALTER TABLE public.user_roles\n    ENABLE ROW LEVEL SECURITY;\n\nCOMMENT ON TABLE public.user_roles\n    IS 'Application roles for each user.';\nCREATE POLICY \"Allow individual read access\"\n    ON public.user_roles\n    AS PERMISSIVE\n    FOR SELECT\n    TO public\n    USING ((auth.uid() = user_id));",
+        "group_name": "Schema Objects",
+        "dependencies": [
+            {
+                "type": "type",
+                "name": "public.app_role",
+                "oid": 16612
+            },
+            {
+                "type": "role",
+                "name": "supabase_admin",
+                "field": "Owner"
+            },
+            {
+                "type": "table",
+                "name": "public.users"
+            },
+            {
+                "type": "function",
+                "name": "auth.uid",
+                "oid": 16503
+            },
+            {
+                "type": "column",
+                "name": "public.user_roles.user_id",
+                "oid": 16673
+            }
+        ],
+        "source_schema_name": null
+    },
+    {
+        "id": 7,
+        "type": "table",
+        "label": "Tables",
+        "title": "items",
+        "oid": 16579,
+        "status": "Source Only",
+        "source_ddl": "CREATE TABLE public.items\n(\n    id integer\n)\n\nTABLESPACE pg_default;\n\nALTER TABLE public.items\n    OWNER to postgres;",
+        "target_ddl": "",
+        "diff_ddl": "CREATE TABLE public.items\n(\n    id integer\n)\n\nTABLESPACE pg_default;\n\nALTER TABLE public.items\n    OWNER to postgres;",
+        "group_name": "Schema Objects",
+        "dependencies": [],
+        "source_schema_name": null
+    },
+    {
+        "id": 8,
+        "type": "table",
+        "label": "Tables",
+        "title": "users",
+        "oid": 16623,
+        "status": "Source Only",
+        "source_ddl": "CREATE TABLE public.users\n(\n    id uuid NOT NULL,\n    username text COLLATE pg_catalog.\"default\",\n    status user_status DEFAULT 'OFFLINE'::user_status,\n    CONSTRAINT users_pkey PRIMARY KEY (id)\n)\n\nTABLESPACE pg_default;\n\nALTER TABLE public.users\n    OWNER to supabase_admin;\n\nALTER TABLE public.users\n    ENABLE ROW LEVEL SECURITY;\n\nCOMMENT ON TABLE public.users\n    IS 'Profile data for each user.';\n\nCOMMENT ON COLUMN public.users.id\n    IS 'References the internal Supabase Auth user.';\nCREATE POLICY \"Allow individual insert access\"\n    ON public.users\n    AS PERMISSIVE\n    FOR INSERT\n    TO public\n    WITH CHECK ((auth.uid() = id));\nCREATE POLICY \"Allow individual update access\"\n    ON public.users\n    AS PERMISSIVE\n    FOR UPDATE\n    TO public\n    USING ((auth.uid() = id));\nCREATE POLICY \"Allow logged-in read access\"\n    ON public.users\n    AS PERMISSIVE\n    FOR SELECT\n    TO public\n    USING ((auth.role() = 'authenticated'::text));",
+        "target_ddl": "",
+        "diff_ddl": "CREATE TABLE public.users\n(\n    id uuid NOT NULL,\n    username text COLLATE pg_catalog.\"default\",\n    status user_status DEFAULT 'OFFLINE'::user_status,\n    CONSTRAINT users_pkey PRIMARY KEY (id)\n)\n\nTABLESPACE pg_default;\n\nALTER TABLE public.users\n    OWNER to supabase_admin;\n\nALTER TABLE public.users\n    ENABLE ROW LEVEL SECURITY;\n\nCOMMENT ON TABLE public.users\n    IS 'Profile data for each user.';\n\nCOMMENT ON COLUMN public.users.id\n    IS 'References the internal Supabase Auth user.';\nCREATE POLICY \"Allow individual insert access\"\n    ON public.users\n    AS PERMISSIVE\n    FOR INSERT\n    TO public\n    WITH CHECK ((auth.uid() = id));\nCREATE POLICY \"Allow individual update access\"\n    ON public.users\n    AS PERMISSIVE\n    FOR UPDATE\n    TO public\n    USING ((auth.uid() = id));\nCREATE POLICY \"Allow logged-in read access\"\n    ON public.users\n    AS PERMISSIVE\n    FOR SELECT\n    TO public\n    USING ((auth.role() = 'authenticated'::text));",
+        "group_name": "Schema Objects",
+        "dependencies": [
+            {
+                "type": "type",
+                "name": "public.user_status",
+                "oid": 16618
+            },
+            {
+                "type": "role",
+                "name": "supabase_admin",
+                "field": "Owner"
+            },
+            {
+                "type": "function",
+                "name": "auth.uid",
+                "oid": 16503
+            },
+            {
+                "type": "column",
+                "name": "public.users.id",
+                "oid": 16623
+            },
+            {
+                "type": "function",
+                "name": "auth.uid",
+                "oid": 16503
+            },
+            {
+                "type": "column",
+                "name": "public.users.id",
+                "oid": 16623
+            },
+            {
+                "type": "function",
+                "name": "auth.role",
+                "oid": 16504
+            }
+        ],
+        "source_schema_name": null
+    },
+    {
+        "id": 9,
+        "type": "table",
+        "label": "Tables",
+        "title": "messages",
+        "oid": 16652,
+        "status": "Source Only",
+        "source_ddl": "CREATE TABLE public.messages\n(\n    id bigint NOT NULL GENERATED BY DEFAULT AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),\n    inserted_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),\n    message text COLLATE pg_catalog.\"default\",\n    user_id uuid NOT NULL,\n    channel_id bigint NOT NULL,\n    CONSTRAINT messages_pkey PRIMARY KEY (id),\n    CONSTRAINT messages_channel_id_fkey FOREIGN KEY (channel_id)\n        REFERENCES public.channels (id) MATCH SIMPLE\n        ON UPDATE NO ACTION\n        ON DELETE CASCADE,\n    CONSTRAINT messages_user_id_fkey FOREIGN KEY (user_id)\n        REFERENCES public.users (id) MATCH SIMPLE\n        ON UPDATE NO ACTION\n        ON DELETE NO ACTION\n)\n\nTABLESPACE pg_default;\n\nALTER TABLE public.messages\n    OWNER to supabase_admin;\n\nALTER TABLE public.messages\n    ENABLE ROW LEVEL SECURITY;\n\nCOMMENT ON TABLE public.messages\n    IS 'Individual messages sent by each user.';\nCREATE POLICY \"Allow authorized delete access\"\n    ON public.messages\n    AS PERMISSIVE\n    FOR DELETE\n    TO public\n    USING (authorize('messages.delete'::app_permission, auth.uid()));\nCREATE POLICY \"Allow individual delete access\"\n    ON public.messages\n    AS PERMISSIVE\n    FOR DELETE\n    TO public\n    USING ((auth.uid() = user_id));\nCREATE POLICY \"Allow individual insert access\"\n    ON public.messages\n    AS PERMISSIVE\n    FOR INSERT\n    TO public\n    WITH CHECK ((auth.uid() = user_id));\nCREATE POLICY \"Allow individual update access\"\n    ON public.messages\n    AS PERMISSIVE\n    FOR UPDATE\n    TO public\n    USING ((auth.uid() = user_id));\nCREATE POLICY \"Allow logged-in read access\"\n    ON public.messages\n    AS PERMISSIVE\n    FOR SELECT\n    TO public\n    USING ((auth.role() = 'authenticated'::text));",
+        "target_ddl": "",
+        "diff_ddl": "CREATE TABLE public.messages\n(\n    id bigint NOT NULL GENERATED BY DEFAULT AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),\n    inserted_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),\n    message text COLLATE pg_catalog.\"default\",\n    user_id uuid NOT NULL,\n    channel_id bigint NOT NULL,\n    CONSTRAINT messages_pkey PRIMARY KEY (id),\n    CONSTRAINT messages_channel_id_fkey FOREIGN KEY (channel_id)\n        REFERENCES public.channels (id) MATCH SIMPLE\n        ON UPDATE NO ACTION\n        ON DELETE CASCADE,\n    CONSTRAINT messages_user_id_fkey FOREIGN KEY (user_id)\n        REFERENCES public.users (id) MATCH SIMPLE\n        ON UPDATE NO ACTION\n        ON DELETE NO ACTION\n)\n\nTABLESPACE pg_default;\n\nALTER TABLE public.messages\n    OWNER to supabase_admin;\n\nALTER TABLE public.messages\n    ENABLE ROW LEVEL SECURITY;\n\nCOMMENT ON TABLE public.messages\n    IS 'Individual messages sent by each user.';\nCREATE POLICY \"Allow authorized delete access\"\n    ON public.messages\n    AS PERMISSIVE\n    FOR DELETE\n    TO public\n    USING (authorize('messages.delete'::app_permission, auth.uid()));\nCREATE POLICY \"Allow individual delete access\"\n    ON public.messages\n    AS PERMISSIVE\n    FOR DELETE\n    TO public\n    USING ((auth.uid() = user_id));\nCREATE POLICY \"Allow individual insert access\"\n    ON public.messages\n    AS PERMISSIVE\n    FOR INSERT\n    TO public\n    WITH CHECK ((auth.uid() = user_id));\nCREATE POLICY \"Allow individual update access\"\n    ON public.messages\n    AS PERMISSIVE\n    FOR UPDATE\n    TO public\n    USING ((auth.uid() = user_id));\nCREATE POLICY \"Allow logged-in read access\"\n    ON public.messages\n    AS PERMISSIVE\n    FOR SELECT\n    TO public\n    USING ((auth.role() = 'authenticated'::text));",
+        "group_name": "Schema Objects",
+        "dependencies": [
+            {
+                "type": "role",
+                "name": "supabase_admin",
+                "field": "Owner"
+            },
+            {
+                "type": "table",
+                "name": "public.channels"
+            },
+            {
+                "type": "table",
+                "name": "public.users"
+            },
+            {
+                "type": "type",
+                "name": "public.app_permission",
+                "oid": 16607
+            },
+            {
+                "type": "function",
+                "name": "auth.uid",
+                "oid": 16503
+            },
+            {
+                "type": "function",
+                "name": "public.authorize",
+                "oid": 16694
+            },
+            {
+                "type": "function",
+                "name": "auth.uid",
+                "oid": 16503
+            },
+            {
+                "type": "column",
+                "name": "public.messages.user_id",
+                "oid": 16652
+            },
+            {
+                "type": "function",
+                "name": "auth.uid",
+                "oid": 16503
+            },
+            {
+                "type": "column",
+                "name": "public.messages.user_id",
+                "oid": 16652
+            },
+            {
+                "type": "function",
+                "name": "auth.uid",
+                "oid": 16503
+            },
+            {
+                "type": "column",
+                "name": "public.messages.user_id",
+                "oid": 16652
+            },
+            {
+                "type": "function",
+                "name": "auth.role",
+                "oid": 16504
+            }
+        ],
+        "source_schema_name": null
+    },
+    {
+        "id": 10,
+        "type": "table",
+        "label": "Tables",
+        "title": "channels",
+        "oid": 16634,
+        "status": "Source Only",
+        "source_ddl": "CREATE TABLE public.channels\n(\n    id bigint NOT NULL GENERATED BY DEFAULT AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),\n    inserted_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),\n    slug text COLLATE pg_catalog.\"default\" NOT NULL,\n    created_by uuid NOT NULL,\n    CONSTRAINT channels_pkey PRIMARY KEY (id),\n    CONSTRAINT channels_slug_key UNIQUE (slug),\n    CONSTRAINT channels_created_by_fkey FOREIGN KEY (created_by)\n        REFERENCES public.users (id) MATCH SIMPLE\n        ON UPDATE NO ACTION\n        ON DELETE NO ACTION\n)\n\nTABLESPACE pg_default;\n\nALTER TABLE public.channels\n    OWNER to supabase_admin;\n\nALTER TABLE public.channels\n    ENABLE ROW LEVEL SECURITY;\n\nCOMMENT ON TABLE public.channels\n    IS 'Topics and groups.';\nCREATE POLICY \"Allow authorized delete access\"\n    ON public.channels\n    AS PERMISSIVE\n    FOR DELETE\n    TO public\n    USING (authorize('channels.delete'::app_permission, auth.uid()));\nCREATE POLICY \"Allow individual delete access\"\n    ON public.channels\n    AS PERMISSIVE\n    FOR DELETE\n    TO public\n    USING ((auth.uid() = created_by));\nCREATE POLICY \"Allow individual insert access\"\n    ON public.channels\n    AS PERMISSIVE\n    FOR INSERT\n    TO public\n    WITH CHECK ((auth.uid() = created_by));\nCREATE POLICY \"Allow logged-in read access\"\n    ON public.channels\n    AS PERMISSIVE\n    FOR SELECT\n    TO public\n    USING ((auth.role() = 'authenticated'::text));",
+        "target_ddl": "",
+        "diff_ddl": "CREATE TABLE public.channels\n(\n    id bigint NOT NULL GENERATED BY DEFAULT AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),\n    inserted_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),\n    slug text COLLATE pg_catalog.\"default\" NOT NULL,\n    created_by uuid NOT NULL,\n    CONSTRAINT channels_pkey PRIMARY KEY (id),\n    CONSTRAINT channels_slug_key UNIQUE (slug),\n    CONSTRAINT channels_created_by_fkey FOREIGN KEY (created_by)\n        REFERENCES public.users (id) MATCH SIMPLE\n        ON UPDATE NO ACTION\n        ON DELETE NO ACTION\n)\n\nTABLESPACE pg_default;\n\nALTER TABLE public.channels\n    OWNER to supabase_admin;\n\nALTER TABLE public.channels\n    ENABLE ROW LEVEL SECURITY;\n\nCOMMENT ON TABLE public.channels\n    IS 'Topics and groups.';\nCREATE POLICY \"Allow authorized delete access\"\n    ON public.channels\n    AS PERMISSIVE\n    FOR DELETE\n    TO public\n    USING (authorize('channels.delete'::app_permission, auth.uid()));\nCREATE POLICY \"Allow individual delete access\"\n    ON public.channels\n    AS PERMISSIVE\n    FOR DELETE\n    TO public\n    USING ((auth.uid() = created_by));\nCREATE POLICY \"Allow individual insert access\"\n    ON public.channels\n    AS PERMISSIVE\n    FOR INSERT\n    TO public\n    WITH CHECK ((auth.uid() = created_by));\nCREATE POLICY \"Allow logged-in read access\"\n    ON public.channels\n    AS PERMISSIVE\n    FOR SELECT\n    TO public\n    USING ((auth.role() = 'authenticated'::text));",
+        "group_name": "Schema Objects",
+        "dependencies": [
+            {
+                "type": "role",
+                "name": "supabase_admin",
+                "field": "Owner"
+            },
+            {
+                "type": "table",
+                "name": "public.users"
+            },
+            {
+                "type": "type",
+                "name": "public.app_permission",
+                "oid": 16607
+            },
+            {
+                "type": "function",
+                "name": "auth.uid",
+                "oid": 16503
+            },
+            {
+                "type": "function",
+                "name": "public.authorize",
+                "oid": 16694
+            },
+            {
+                "type": "function",
+                "name": "auth.uid",
+                "oid": 16503
+            },
+            {
+                "type": "column",
+                "name": "public.channels.created_by",
+                "oid": 16634
+            },
+            {
+                "type": "function",
+                "name": "auth.uid",
+                "oid": 16503
+            },
+            {
+                "type": "column",
+                "name": "public.channels.created_by",
+                "oid": 16634
+            },
+            {
+                "type": "function",
+                "name": "auth.role",
+                "oid": 16504
+            }
+        ],
+        "source_schema_name": null
+    },
+    {
+        "id": 11,
+        "type": "table",
+        "label": "Tables",
+        "title": "role_permissions",
+        "oid": 16687,
+        "status": "Source Only",
+        "source_ddl": "CREATE TABLE public.role_permissions\n(\n    id bigint NOT NULL GENERATED BY DEFAULT AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),\n    role app_role NOT NULL,\n    permission app_permission NOT NULL,\n    CONSTRAINT role_permissions_pkey PRIMARY KEY (id),\n    CONSTRAINT role_permissions_role_permission_key UNIQUE (role, permission)\n)\n\nTABLESPACE pg_default;\n\nALTER TABLE public.role_permissions\n    OWNER to supabase_admin;\n\nALTER TABLE public.role_permissions\n    ENABLE ROW LEVEL SECURITY;\n\nCOMMENT ON TABLE public.role_permissions\n    IS 'Application permissions for each role.';",
+        "target_ddl": "",
+        "diff_ddl": "CREATE TABLE public.role_permissions\n(\n    id bigint NOT NULL GENERATED BY DEFAULT AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),\n    role app_role NOT NULL,\n    permission app_permission NOT NULL,\n    CONSTRAINT role_permissions_pkey PRIMARY KEY (id),\n    CONSTRAINT role_permissions_role_permission_key UNIQUE (role, permission)\n)\n\nTABLESPACE pg_default;\n\nALTER TABLE public.role_permissions\n    OWNER to supabase_admin;\n\nALTER TABLE public.role_permissions\n    ENABLE ROW LEVEL SECURITY;\n\nCOMMENT ON TABLE public.role_permissions\n    IS 'Application permissions for each role.';",
+        "group_name": "Schema Objects",
+        "dependencies": [
+            {
+                "type": "type",
+                "name": "public.app_permission",
+                "oid": 16607
+            },
+            {
+                "type": "type",
+                "name": "public.app_role",
+                "oid": 16612
+            },
+            {
+                "type": "role",
+                "name": "supabase_admin",
+                "field": "Owner"
+            }
+        ],
+        "source_schema_name": null
+    },
+    {
+        "id": 12,
+        "type": "table",
+        "label": "Tables",
+        "title": "todos",
+        "oid": 16582,
+        "status": "Target Only",
+        "source_ddl": "",
+        "target_ddl": "CREATE TABLE public.todos\n(\n    id bigint NOT NULL GENERATED BY DEFAULT AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),\n    user_id uuid NOT NULL,\n    task text COLLATE pg_catalog.\"default\",\n    is_complete boolean DEFAULT false,\n    inserted_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),\n    CONSTRAINT todos_pkey PRIMARY KEY (id),\n    CONSTRAINT todos_user_id_fkey FOREIGN KEY (user_id)\n        REFERENCES auth.users (id) MATCH SIMPLE\n        ON UPDATE NO ACTION\n        ON DELETE NO ACTION,\n    CONSTRAINT todos_task_check CHECK (char_length(task) > 3)\n)\n\nTABLESPACE pg_default;\n\nALTER TABLE public.todos\n    OWNER to supabase_admin;\n\nALTER TABLE public.todos\n    ENABLE ROW LEVEL SECURITY;\n\nGRANT ALL ON TABLE public.todos TO anon;\n\nGRANT ALL ON TABLE public.todos TO authenticated;\n\nGRANT ALL ON TABLE public.todos TO postgres;\n\nGRANT ALL ON TABLE public.todos TO service_role;\n\nGRANT ALL ON TABLE public.todos TO supabase_admin;\nCREATE POLICY \"Individuals can create todos.\"\n    ON public.todos\n    AS PERMISSIVE\n    FOR INSERT\n    TO public\n    WITH CHECK ((auth.uid() = user_id));\nCREATE POLICY \"Individuals can delete their own todos.\"\n    ON public.todos\n    AS PERMISSIVE\n    FOR DELETE\n    TO public\n    USING ((auth.uid() = user_id));\nCREATE POLICY \"Individuals can update their own todos.\"\n    ON public.todos\n    AS PERMISSIVE\n    FOR UPDATE\n    TO public\n    USING ((auth.uid() = user_id));\nCREATE POLICY \"Individuals can view their own todos. \"\n    ON public.todos\n    AS PERMISSIVE\n    FOR SELECT\n    TO public\n    USING ((auth.uid() = user_id));",
+        "diff_ddl": "DROP TABLE public.todos CASCADE;",
+        "group_name": "Schema Objects",
+        "dependencies": []
+    },
+    {
+        "id": 13,
+        "type": "type",
+        "label": "Types",
+        "title": "app_role",
+        "oid": 16612,
+        "status": "Source Only",
+        "source_ddl": "-- Type: app_role\n\n-- DROP TYPE public.app_role;\n\nCREATE TYPE public.app_role AS ENUM\n    ('admin', 'moderator');\n\nALTER TYPE public.app_role\n    OWNER TO supabase_admin;",
+        "target_ddl": "",
+        "diff_ddl": "-- Type: app_role\n\n-- DROP TYPE public.app_role;\n\nCREATE TYPE public.app_role AS ENUM\n    ('admin', 'moderator');\n\nALTER TYPE public.app_role\n    OWNER TO supabase_admin;",
+        "group_name": "Schema Objects",
+        "dependencies": [
+            {
+                "type": "role",
+                "name": "supabase_admin",
+                "field": "Owner"
+            }
+        ],
+        "source_schema_name": null
+    },
+    {
+        "id": 14,
+        "type": "type",
+        "label": "Types",
+        "title": "app_permission",
+        "oid": 16607,
+        "status": "Source Only",
+        "source_ddl": "-- Type: app_permission\n\n-- DROP TYPE public.app_permission;\n\nCREATE TYPE public.app_permission AS ENUM\n    ('channels.delete', 'messages.delete');\n\nALTER TYPE public.app_permission\n    OWNER TO supabase_admin;",
+        "target_ddl": "",
+        "diff_ddl": "-- Type: app_permission\n\n-- DROP TYPE public.app_permission;\n\nCREATE TYPE public.app_permission AS ENUM\n    ('channels.delete', 'messages.delete');\n\nALTER TYPE public.app_permission\n    OWNER TO supabase_admin;",
+        "group_name": "Schema Objects",
+        "dependencies": [
+            {
+                "type": "role",
+                "name": "supabase_admin",
+                "field": "Owner"
+            }
+        ],
+        "source_schema_name": null
+    },
+    {
+        "id": 15,
+        "type": "type",
+        "label": "Types",
+        "title": "user_status",
+        "oid": 16618,
+        "status": "Source Only",
+        "source_ddl": "-- Type: user_status\n\n-- DROP TYPE public.user_status;\n\nCREATE TYPE public.user_status AS ENUM\n    ('ONLINE', 'OFFLINE');\n\nALTER TYPE public.user_status\n    OWNER TO supabase_admin;",
+        "target_ddl": "",
+        "diff_ddl": "-- Type: user_status\n\n-- DROP TYPE public.user_status;\n\nCREATE TYPE public.user_status AS ENUM\n    ('ONLINE', 'OFFLINE');\n\nALTER TYPE public.user_status\n    OWNER TO supabase_admin;",
+        "group_name": "Schema Objects",
+        "dependencies": [
+            {
+                "type": "role",
+                "name": "supabase_admin",
+                "field": "Owner"
+            }
+        ],
+        "source_schema_name": null
+    },
+    {
+        "id": 16,
+        "type": "type",
+        "label": "Types",
+        "title": "continents",
+        "oid": 16715,
+        "status": "Source Only",
+        "source_ddl": "-- Type: continents\n\n-- DROP TYPE public.continents;\n\nCREATE TYPE public.continents AS ENUM\n    ('Africa', 'Antarctica', 'Asia', 'Europe', 'Oceania', 'North America', 'South America');\n\nALTER TYPE public.continents\n    OWNER TO supabase_admin;",
+        "target_ddl": "",
+        "diff_ddl": "-- Type: continents\n\n-- DROP TYPE public.continents;\n\nCREATE TYPE public.continents AS ENUM\n    ('Africa', 'Antarctica', 'Asia', 'Europe', 'Oceania', 'North America', 'South America');\n\nALTER TYPE public.continents\n    OWNER TO supabase_admin;",
+        "group_name": "Schema Objects",
+        "dependencies": [
+            {
+                "type": "role",
+                "name": "supabase_admin",
+                "field": "Owner"
+            }
+        ],
+        "source_schema_name": null
+    },
+    {
+        "id": 17,
+        "type": "view",
+        "label": "Views",
+        "title": "entities",
+        "oid": 16595,
+        "status": "Source Only",
+        "source_ddl": "CREATE OR REPLACE VIEW public.entities\n AS\n SELECT entities.id,\n    entities.name\n   FROM private.entities;\n\nALTER TABLE public.entities\n    OWNER TO public_views_owner;\n\nGRANT ALL ON TABLE public.entities TO public_views_owner;\n\n",
+        "target_ddl": "",
+        "diff_ddl": "CREATE OR REPLACE VIEW public.entities\n AS\n SELECT entities.id,\n    entities.name\n   FROM private.entities;\n\nALTER TABLE public.entities\n    OWNER TO public_views_owner;\n\nGRANT ALL ON TABLE public.entities TO public_views_owner;\n\n",
+        "group_name": "Schema Objects",
+        "dependencies": [
+            {
+                "type": "column",
+                "name": "private.entities.id",
+                "oid": 16589
+            },
+            {
+                "type": "column",
+                "name": "private.entities.name",
+                "oid": 16589
+            },
+            {
+                "type": "role",
+                "name": "public_views_owner",
+                "field": "Owner"
+            }
+        ],
+        "source_schema_name": null
+    }
+]
